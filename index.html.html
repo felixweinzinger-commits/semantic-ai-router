@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semantic AI Router & Model Optimizer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        emerald: {
+                            500: '#10b981',
+                            600: '#059669',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        arabic: ['Cairo', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .arabic-text {
+            font-family: 'Cairo', sans-serif;
+            direction: rtl;
+        }
+        .gradient-border {
+            border: 1px solid transparent;
+            background-image: linear-gradient(white, white), linear-gradient(to right, #3b82f6, #10b981);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+        }
+        .dark .gradient-border {
+            background-image: linear-gradient(#1f2937, #1f2937), linear-gradient(to right, #3b82f6, #10b981);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-full flex flex-col font-sans transition-colors duration-200">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Brand -->
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-blue-600 text-white rounded-xl shadow-md shadow-blue-500/20">
+                        <i data-lucide="cpu" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-lg text-slate-900 dark:text-white tracking-tight">Semantic AI Router</span>
+                            <span class="px-2 py-0.5 text-xs font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-full border border-emerald-300 dark:border-emerald-700">Token Saver v2.4</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Intelligent Task Classification & Model Cost Optimization</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="hidden md:flex items-center space-x-1">
+                    <button onclick="switchTab('sandbox')" id="tab-btn-sandbox" class="tab-btn active px-3 py-2 text-sm font-medium rounded-lg text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 flex items-center gap-2">
+                        <i data-lucide="compass" class="w-4 h-4"></i> Sandbox Router
+                    </button>
+                    <button onclick="switchTab('routes')" id="tab-btn-routes" class="tab-btn px-3 py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                        <i data-lucide="git-fork" class="w-4 h-4"></i> Route Manager
+                    </button>
+                    <button onclick="switchTab('simulator')" id="tab-btn-simulator" class="tab-btn px-3 py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                        <i data-lucide="play-circle" class="w-4 h-4"></i> Live Simulator
+                    </button>
+                    <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="tab-btn px-3 py-2 text-sm font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i> ROI & Savings
+                    </button>
+                </nav>
+
+                <!-- Actions / Controls -->
+                <div class="flex items-center gap-2">
+                    <button id="themeToggle" onclick="toggleDarkMode()" class="p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 rounded-lg transition-colors" title="Toggle theme">
+                        <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+                        <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Tabs -->
+        <div class="md:hidden border-t border-slate-200 dark:border-slate-700 px-2 py-2 flex justify-around bg-slate-50 dark:bg-slate-800/80">
+            <button onclick="switchTab('sandbox')" class="tab-btn-mob text-xs p-2 rounded text-blue-600 font-semibold flex flex-col items-center">
+                <i data-lucide="compass" class="w-4 h-4"></i> Router
+            </button>
+            <button onclick="switchTab('routes')" class="tab-btn-mob text-xs p-2 rounded text-slate-600 flex flex-col items-center">
+                <i data-lucide="git-fork" class="w-4 h-4"></i> Routes
+            </button>
+            <button onclick="switchTab('simulator')" class="tab-btn-mob text-xs p-2 rounded text-slate-600 flex flex-col items-center">
+                <i data-lucide="play-circle" class="w-4 h-4"></i> Demo
+            </button>
+            <button onclick="switchTab('analytics')" class="tab-btn-mob text-xs p-2 rounded text-slate-600 flex flex-col items-center">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Savings
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- TAB 1: SANDBOX ROUTER -->
+        <section id="tab-content-sandbox" class="tab-content block space-y-6">
+            <!-- Banner Explanation for Non-Tech Users -->
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-5 rounded-2xl shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <h1 class="text-xl font-bold flex items-center gap-2">
+                        <i data-lucide="sparkles" class="w-5 h-5 text-yellow-300"></i> Smart Semantic Intent Matcher
+                    </h1>
+                    <p class="text-blue-100 text-sm max-w-2xl">
+                        Type any prompt in plain English or Arabic. The router analyzes the request's context and instantly pairs it with the most cost-effective open-source or closed model—saving up to 85% in tokens without losing quality.
+                    </p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20 text-xs font-medium text-blue-50 shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Router Engine: Active
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preset Scenario Chips -->
+            <div class="flex flex-wrap items-center gap-2 text-xs font-medium">
+                <span class="text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i> Quick Test Scenarios:
+                </span>
+                <button onclick="setSamplePrompt('arabic_linkedin')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-700 rounded-full transition text-slate-700 dark:text-slate-200">
+                    🇦🇪 Arabic LinkedIn Post
+                </button>
+                <button onclick="setSamplePrompt('python_script')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-700 rounded-full transition text-slate-700 dark:text-slate-200">
+                    🐍 Python Data Script
+                </button>
+                <button onclick="setSamplePrompt('summarize_rag')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-700 rounded-full transition text-slate-700 dark:text-slate-200">
+                    📄 Meeting Notes Summary
+                </button>
+                <button onclick="setSamplePrompt('math_reasoning')" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:text-blue-700 rounded-full transition text-slate-700 dark:text-slate-200">
+                    🧮 Math & Logic Puzzle
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Input Panel -->
+                <div class="lg:col-span-6 bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label for="promptInput" class="font-semibold text-sm text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                                <i data-lucide="message-square" class="w-4 h-4 text-blue-500"></i>
+                                Enter Prompt or Request
+                            </label>
+                            <span id="tokenCounter" class="text-xs text-slate-400">~14 estimated tokens</span>
+                        </div>
+                        <textarea id="promptInput" rows="6" oninput="analyzePrompt()" class="w-full p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm transition font-sans" placeholder="e.g. Write a professional LinkedIn text in Arabic announcing our AI product release..."></textarea>
+                    </div>
+
+                    <div class="flex items-center justify-between pt-2">
+                        <div class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <i data-lucide="info" class="w-3.5 h-3.5 text-blue-500"></i> Matches vector intent embeddings in ~8ms
+                        </div>
+                        <button onclick="runLiveSimulationFromSandbox()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-xs flex items-center gap-2 shadow-md transition">
+                            <i data-lucide="play" class="w-3.5 h-3.5"></i> Test Run Output
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Analysis & Recommendation Output Panel -->
+                <div class="lg:col-span-6 space-y-4">
+                    <!-- Intent Match Result Card -->
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Detected Semantic Intent</span>
+                            <span id="matchConfidenceBadge" class="px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300 rounded-full flex items-center gap-1">
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> 98% Match
+                            </span>
+                        </div>
+
+                        <div class="flex items-start gap-4">
+                            <div id="categoryIconContainer" class="p-3 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-xl">
+                                <i data-lucide="globe" class="w-6 h-6"></i>
+                            </div>
+                            <div class="flex-1 space-y-1">
+                                <h3 id="categoryTitle" class="text-lg font-bold text-slate-900 dark:text-white">Arabic Copywriting & Content</h3>
+                                <p id="categoryDescription" class="text-xs text-slate-500 dark:text-slate-400">
+                                    Prompts requiring Arabic natural language generation, copywriting, marketing, or social media updates.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Match Breakdown / Score bar -->
+                        <div class="space-y-1.5 pt-1">
+                            <div class="flex justify-between text-xs font-medium">
+                                <span class="text-slate-500">Language Alignment (Arabic NLP score)</span>
+                                <span id="alignmentScoreText" class="text-blue-600 dark:text-blue-400 font-bold">99 / 100</span>
+                            </div>
+                            <div class="w-full bg-slate-100 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
+                                <div id="alignmentScoreBar" class="bg-blue-600 h-full rounded-full transition-all duration-500" style="width: 99%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommended Model Card -->
+                    <div class="gradient-border bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm space-y-4">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                                <i data-lucide="award" class="w-4 h-4"></i> Optimized Model Recommendation
+                            </span>
+                            <span id="modelTypeBadge" class="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-300 rounded-md">
+                                Open-Source High Perf
+                            </span>
+                        </div>
+
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 id="recommendedModelName" class="text-xl font-extrabold text-slate-900 dark:text-white">Qwen 2.5 72B Instruct</h2>
+                                <p id="recommendedModelReason" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    Outperforms flagship models on Arabic benchmarks at 1/12th the price.
+                                </p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400" id="savingsPercentageHeader">~91%</div>
+                                <div class="text-[10px] text-slate-400 uppercase font-semibold">Cost Reduction</div>
+                            </div>
+                        </div>
+
+                        <!-- Metrics Grid -->
+                        <div class="grid grid-cols-3 gap-3 pt-2 border-t border-slate-100 dark:border-slate-700 text-center">
+                            <div class="bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl">
+                                <div class="text-[10px] text-slate-400 font-medium">Model Cost / 1M</div>
+                                <div id="recommendedCostText" class="text-sm font-bold text-slate-800 dark:text-slate-200">$0.35</div>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl">
+                                <div class="text-[10px] text-slate-400 font-medium">Flagship Baseline</div>
+                                <div id="baselineCostText" class="text-sm font-bold text-red-500">$4.00</div>
+                            </div>
+                            <div class="bg-slate-50 dark:bg-slate-900/50 p-2.5 rounded-xl">
+                                <div class="text-[10px] text-slate-400 font-medium">Quality Rating</div>
+                                <div id="qualityRatingText" class="text-sm font-bold text-emerald-600 dark:text-emerald-400">96 / 100</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: ROUTE MANAGER -->
+        <section id="tab-content-routes" class="tab-content hidden space-y-6">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i data-lucide="git-fork" class="w-5 h-5 text-blue-500"></i> Semantic Intent Routes Configurator
+                    </h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        Define custom routing rules for your organization. Assign cost-effective models based on keywords or semantic hints.
+                    </p>
+                </div>
+                <button onclick="openNewRouteModal()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium text-xs flex items-center gap-2 shadow-md transition">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Add Custom Route
+                </button>
+            </div>
+
+            <!-- List of Configured Routes -->
+            <div id="routesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <!-- Route Cards injected dynamically -->
+            </div>
+        </section>
+
+        <!-- TAB 3: LIVE SIMULATOR -->
+        <section id="tab-content-simulator" class="tab-content hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="play-circle" class="w-5 h-5 text-blue-500"></i> Live Route Execution Simulator
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                            Compare generated responses side-by-side between the Automatically Routed Model vs Forced Flagship Model.
+                        </p>
+                    </div>
+
+                    <!-- Mode Toggle -->
+                    <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 p-1.5 rounded-xl text-xs font-semibold">
+                        <button id="simModeAuto" onclick="setSimMode('auto')" class="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-blue-600 shadow-sm transition">
+                            🤖 Auto Semantic Router
+                        </button>
+                        <button id="simModeFlagship" onclick="setSimMode('flagship')" class="px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition">
+                            💸 Force Flagship Only
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <input type="text" id="simPromptInput" class="flex-1 p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm text-slate-800 dark:text-slate-100" value="Write a LinkedIn post in Arabic announcing our AI productivity tool launch.">
+                    <button onclick="runSimulation()" id="runSimBtn" class="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-xl flex items-center gap-2 transition shrink-0">
+                        <i data-lucide="zap" class="w-4 h-4"></i> Run Execution
+                    </button>
+                </div>
+            </div>
+
+            <!-- Execution Results Comparison -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Routed Output Box -->
+                <div class="bg-white dark:bg-slate-800 rounded-2xl border-2 border-emerald-500/30 p-5 shadow-sm space-y-3 relative">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <span class="font-bold text-sm text-slate-800 dark:text-slate-100" id="simRoutedModelTitle">Qwen 2.5 72B (Routed)</span>
+                        </div>
+                        <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 rounded">
+                            Est. Cost: $0.0003
+                        </span>
+                    </div>
+
+                    <div id="simRoutedContent" class="min-h-[220px] p-4 bg-slate-50 dark:bg-slate-900/80 rounded-xl text-sm leading-relaxed text-slate-700 dark:text-slate-200 font-sans whitespace-pre-wrap">
+                        Click "Run Execution" to stream generated output from the optimal model...
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-700">
+                        <span>Latency: <strong id="simRoutedLatency" class="text-slate-700 dark:text-slate-300">240ms</strong></span>
+                        <span>Token Consumption: <strong id="simRoutedTokens" class="text-slate-700 dark:text-slate-300">185 tokens</strong></span>
+                    </div>
+                </div>
+
+                <!-- Flagship Output Box -->
+                <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                            <span class="font-bold text-sm text-slate-800 dark:text-slate-100">GPT-4o / Claude 3.5 Sonnet</span>
+                        </div>
+                        <span class="px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 rounded">
+                            Est. Cost: $0.0038
+                        </span>
+                    </div>
+
+                    <div id="simFlagshipContent" class="min-h-[220px] p-4 bg-slate-50 dark:bg-slate-900/80 rounded-xl text-sm leading-relaxed text-slate-700 dark:text-slate-200 font-sans whitespace-pre-wrap">
+                        Click "Run Execution" to compare output quality against flagship models...
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-700">
+                        <span>Latency: <strong id="simFlagshipLatency" class="text-slate-700 dark:text-slate-300">620ms</strong></span>
+                        <span>Token Cost Delta: <strong class="text-red-500">+1100% higher cost</strong></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: ANALYTICS & SAVINGS -->
+        <section id="tab-content-analytics" class="tab-content hidden space-y-6">
+            <!-- Summary KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Est. Monthly Savings</span>
+                    <div class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400" id="kpiMonthlySavings">$1,420.00</div>
+                    <p class="text-[11px] text-slate-500">Based on 250k prompts/mo</p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Overall Token Cost Reduction</span>
+                    <div class="text-2xl font-extrabold text-blue-600 dark:text-blue-400">78.4%</div>
+                    <p class="text-[11px] text-slate-500">vs 100% Flagship routing</p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Avg Response Latency</span>
+                    <div class="text-2xl font-extrabold text-purple-600 dark:text-purple-400">280 ms</div>
+                    <p class="text-[11px] text-slate-500">2.2x faster execution</p>
+                </div>
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-1">
+                    <span class="text-xs font-semibold text-slate-400 uppercase">Open Source Route Share</span>
+                    <div class="text-2xl font-extrabold text-slate-800 dark:text-slate-100">82%</div>
+                    <p class="text-[11px] text-slate-500">Tasks resolved via open weights</p>
+                </div>
+            </div>
+
+            <!-- Charts & Calculator Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Volume Distribution Chart -->
+                <div class="lg:col-span-7 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
+                    <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-blue-500"></i> Monthly Task Volume & Model Distribution
+                    </h3>
+                    <div class="h-64">
+                        <canvas id="volumeChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- ROI Calculator -->
+                <div class="lg:col-span-5 bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                            <i data-lucide="calculator" class="w-4 h-4 text-emerald-500"></i> Interactive ROI Calculator
+                        </h3>
+
+                        <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-xs font-medium mb-1">
+                                    <label for="monthlyPrompts" class="text-slate-600 dark:text-slate-300">Monthly Prompt Volume</label>
+                                    <span id="promptVolumeVal" class="font-bold text-blue-600">250,000</span>
+                                </div>
+                                <input type="range" id="monthlyPrompts" min="10000" max="1000000" step="10000" value="250000" oninput="updateCalculator()" class="w-full accent-blue-600">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs font-medium mb-1">
+                                    <label for="avgTokenLength" class="text-slate-600 dark:text-slate-300">Avg Tokens per Request</label>
+                                    <span id="avgTokenVal" class="font-bold text-blue-600">600 tokens</span>
+                                </div>
+                                <input type="range" id="avgTokenLength" min="100" max="4000" step="100" value="600" oninput="updateCalculator()" class="w-full accent-blue-600">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs font-medium mb-1">
+                                    <label for="openSourcePct" class="text-slate-600 dark:text-slate-300">Routeable Easy/Medium Tasks</label>
+                                    <span id="openSourcePctVal" class="font-bold text-blue-600">80%</span>
+                                </div>
+                                <input type="range" id="openSourcePct" min="50" max="95" step="5" value="80" oninput="updateCalculator()" class="w-full accent-blue-600">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl space-y-2 border border-slate-100 dark:border-slate-800">
+                        <div class="flex justify-between text-xs text-slate-500">
+                            <span>Cost with Flagship Models Only:</span>
+                            <span id="calcFlagshipCost" class="font-semibold text-red-500">$1,800/mo</span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-500">
+                            <span>Cost with Semantic AI Router:</span>
+                            <span id="calcRoutedCost" class="font-semibold text-emerald-600 dark:text-emerald-400">$380/mo</span>
+                        </div>
+                        <div class="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between items-center">
+                            <span class="font-bold text-sm text-slate-800 dark:text-slate-100">Net Estimated Savings:</span>
+                            <span id="calcNetSavings" class="font-extrabold text-lg text-emerald-600 dark:text-emerald-400">$1,420 / mo</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- NEW ROUTE MODAL -->
+    <div id="newRouteModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+                <h3 class="font-bold text-slate-900 dark:text-white text-base">Add New Intent Route</h3>
+                <button onclick="closeNewRouteModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="newRouteForm" onsubmit="saveCustomRoute(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Route Title</label>
+                    <input type="text" id="routeTitleInput" required placeholder="e.g. Arabic Social Copywriting" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs">
+                </div>
+
+                <div>
+                    <label class="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Target Assigned Model</label>
+                    <select id="routeModelSelect" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs">
+                        <option value="qwen2.5">Qwen 2.5 72B Instruct (Open Weight - $0.35/1M)</option>
+                        <option value="deepseekv3">DeepSeek V3 / Coder (Open Weight - $0.28/1M)</option>
+                        <option value="llama3.3">Llama 3.3 70B (Open Weight - $0.40/1M)</option>
+                        <option value="commandr">Command R+ (Multilingual - $1.50/1M)</option>
+                        <option value="claude35">Claude 3.5 Sonnet (Closed Flagship - $3.00/1M)</option>
+                        <option value="gpt4o">GPT-4o (Closed Flagship - $2.50/1M)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="font-semibold text-slate-700 dark:text-slate-300 block mb-1">Keywords / Semantic Trigger Phrases (comma separated)</label>
+                    <textarea id="routeTriggersInput" required rows="3" placeholder="e.g. linkedin arabic, بالعربي, منشور, twitter arabic" class="w-full p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs"></textarea>
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeNewRouteModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">Save Route</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application State & Script -->
+    <script>
+        // System State
+        let currentTab = 'sandbox';
+        let currentSimMode = 'auto';
+        let chartInstance = null;
+
+        // Sample Prompts Dictionary
+        const samplePrompts = {
+            arabic_linkedin: "اكتب منشور ليناكد إن باللغة العربية حول إطلاق منتج الذكاء الاصطناعي الجديد لزيادة الإنتاجية للفرق.",
+            python_script: "Write a Python script to parse a nested JSON response and filter records where status is active.",
+            summarize_rag: "Summarize the key action items and decisions from these meeting transcript notes.",
+            math_reasoning: "A water tank is filled by Pipe A in 4 hours and emptied by Pipe B in 6 hours. How long to fill it completely?"
+        };
+
+        // Model Master Database
+        const modelsDB = {
+            'qwen2.5': {
+                name: 'Qwen 2.5 72B Instruct',
+                type: 'Open-Weight / Specialized',
+                costPer1M: 0.35,
+                baselineCostPer1M: 4.00,
+                qualityRating: 96,
+                description: 'Outperforms flagship models on Arabic benchmarks at 1/12th the price.'
+            },
+            'deepseekv3': {
+                name: 'DeepSeek V3 / Coder',
+                type: 'Open-Weight / Specialized',
+                costPer1M: 0.28,
+                baselineCostPer1M: 3.50,
+                qualityRating: 98,
+                description: 'Exceptional code generation, logic reasoning, and JSON formatting.'
+            },
+            'llama3.3': {
+                name: 'Llama 3.3 70B',
+                type: 'Open-Weight / General',
+                costPer1M: 0.40,
+                baselineCostPer1M: 3.00,
+                qualityRating: 94,
+                description: 'Fast, high-throughput model ideal for summarization and general Q&A.'
+            },
+            'commandr': {
+                name: 'Command R+',
+                type: 'Open-Weight / Multilingual',
+                costPer1M: 1.50,
+                baselineCostPer1M: 4.00,
+                qualityRating: 95,
+                description: 'Optimized for heavy RAG workflows and multilingual contextual tasks.'
+            },
+            'claude35': {
+                name: 'Claude 3.5 Sonnet',
+                type: 'Closed Flagship',
+                costPer1M: 3.00,
+                baselineCostPer1M: 3.00,
+                qualityRating: 99,
+                description: 'High-tier reasoning model reserved for complex multi-step tasks.'
+            },
+            'gpt4o': {
+                name: 'GPT-4o',
+                type: 'Closed Flagship',
+                costPer1M: 2.50,
+                baselineCostPer1M: 2.50,
+                qualityRating: 97,
+                description: 'Omni general model for highly creative or unclassifiable prompts.'
+            }
+        };
+
+        // Semantic Routes Registry
+        let customRoutes = [
+            {
+                id: 'route-1',
+                title: 'Arabic Content & Copywriting',
+                category: 'arabic',
+                icon: 'globe',
+                modelKey: 'qwen2.5',
+                triggers: ['arabic', 'linkedin arabic', 'بالعربي', 'منشور', 'كتابة', 'عربي', 'dubai', 'middle east']
+            },
+            {
+                id: 'route-2',
+                title: 'Code, SQL & Scripting',
+                category: 'code',
+                icon: 'code',
+                modelKey: 'deepseekv3',
+                triggers: ['python', 'script', 'json', 'sql', 'react', 'code', 'bug', 'developer', 'function']
+            },
+            {
+                id: 'route-3',
+                title: 'Summarization & RAG Extract',
+                category: 'summary',
+                icon: 'file-text',
+                modelKey: 'llama3.3',
+                triggers: ['summarize', 'summary', 'meeting notes', 'pdf', 'extract', 'key points', 'bullet points']
+            },
+            {
+                id: 'route-4',
+                title: 'Complex Math & Reasoning',
+                category: 'math',
+                icon: 'calculator',
+                modelKey: 'claude35',
+                triggers: ['math', 'equation', 'calculate', 'solve', 'proof', 'physics', 'logic puzzle']
+            }
+        ];
+
+        // Sample Generated Outputs for Simulator
+        const simulatedOutputs = {
+            arabic: {
+                routedModel: 'Qwen 2.5 72B Instruct',
+                routedText: `🚀 **منشور لينكد إن: ثورة جديدة في إنتاجية الأعمال باستخدام الذكاء الاصطناعي!**\n\nنحن يسعدنا اليوم الإعلان عن إطلاق أحدث أدواتنا القائمة على الذكاء الاصطناعي لزيادة كفاءة فرق العمل وتوفير الوقت.\n\n✨ **أبرز المميزات:**\n• أتمتة المهام الروتينية بنسبة تصل إلى 80%\n• دعم كامل للغة العربية بفهم سياقي دقيق\n• تحليلات فورية لسرعة اتخاذ القرار\n\n💡 هل أنت مستعد لرفع إنتاجية فريقك؟ جرب الأداة مجاناً اليوم عبر الرابط في أول تعليق! 👇\n\n#الذكاء_الاصطناعي #الإنتاجية #ابتكار #تكنولوجيا #لينكد_إن`,
+                flagshipText: `🚀 **إطلاق أداة الذكاء الاصطناعي الجديدة لزيادة الإنتاجية!**\n\nنعلن اليوم عن إطلاق منصتنا الذكية المصممة لمساعدة الشركات على تنظيم أعمالها بشكل أسرع وأكثر كفاءة.\n\nتتميز الأداة بسهولة الاستخدام والقدرة على فهم البيانات المعقدة باللغة العربية.\n\n👉 انضم إلينا اليوم وابدأ تجريبتك المجانية!\n\n#الذكاء_الاصطناعي #تكنولوجيا #أعمال`
+            },
+            code: {
+                routedModel: 'DeepSeek V3 / Coder',
+                routedText: `\`\`\`python\nimport json\n\ndef filter_active_records(json_data):\n    """\n    Parses nested JSON and returns list of active items.\n    """\n    try:\n        data = json.loads(json_data) if isinstance(json_data, str) else json_data\n        records = data.get('data', {}).get('items', [])\n        \n        # Filter active records\n        active_items = [item for item in records if item.get('status') == 'active']\n        return active_items\n    except Exception as e:\n        print(f"Error parsing JSON: {e}")\n        return []\n\n# Example Test\nsample_json = '{"data": {"items": [{"id": 1, "status": "active"}, {"id": 2, "status": "inactive"}]}}'\nprint(filter_active_records(sample_json))\n\`\`\``,
+                flagshipText: `\`\`\`python\nimport json\n\ndata = json.loads(raw_json_string)\nactive_users = [user for user in data['users'] if user['status'] == 'active']\nprint(f"Found {len(active_users)} active users.")\n\`\`\``
+            },
+            summary: {
+                routedModel: 'Llama 3.3 70B',
+                routedText: `📌 **Executive Summary & Action Items:**\n\n1. **Q3 Roadmap Approval**: Finalized features for AI automation release scheduled for Nov 15.\n2. **Budget Reallocation**: Approved $15k shift to cloud GPU infrastructure.\n3. **Action Items**:\n   - Sarah: Review API routing specs by Friday.\n   - Ahmed: Finalize Arabic localization test prompts.`,
+                flagshipText: `**Meeting Notes Summary:**\n- Agreed on Q3 release timeline.\n- Reallocated GPU budgets.\n- Sarah and Ahmed assigned follow-up technical tasks.`
+            }
+        };
+
+        // Initialize Lucide Icons
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderRoutesList();
+            analyzePrompt();
+            initChart();
+            updateCalculator();
+        });
+
+        // Tab Switcher
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'text-blue-600', 'bg-blue-50', 'dark:bg-blue-900/30', 'dark:text-blue-400');
+                btn.classList.add('text-slate-600', 'dark:text-slate-300');
+            });
+
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'text-blue-600', 'bg-blue-50', 'dark:bg-blue-900/30', 'dark:text-blue-400');
+            }
+
+            if (tabId === 'analytics' && chartInstance) {
+                setTimeout(() => chartInstance.update(), 100);
+            }
+        }
+
+        // Toggle Dark Mode
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        // Preset Prompt Injector
+        function setSamplePrompt(key) {
+            if (samplePrompts[key]) {
+                const textarea = document.getElementById('promptInput');
+                textarea.value = samplePrompts[key];
+                analyzePrompt();
+            }
+        }
+
+        // Semantic Analysis Logic
+        function analyzePrompt() {
+            const text = document.getElementById('promptInput').value.trim();
+            const tokenCounter = document.getElementById('tokenCounter');
+            
+            // Estimate tokens (~4 characters per token average)
+            const estimatedTokens = Math.max(1, Math.round(text.length / 3.8));
+            tokenCounter.textContent = `~${estimatedTokens} estimated tokens`;
+
+            if (!text) {
+                return;
+            }
+
+            const lowerText = text.toLowerCase();
+            let matchedRoute = null;
+            let highestScore = 0;
+
+            // Simple vector keyword/intent similarity matching
+            customRoutes.forEach(route => {
+                let score = 0;
+                route.triggers.forEach(trigger => {
+                    if (lowerText.includes(trigger.toLowerCase())) {
+                        score += 35;
+                    }
+                });
+
+                // Arabic character detection boost
+                if (route.category === 'arabic' && /[\u0600-\u06FF]/.test(text)) {
+                    score += 60;
+                }
+
+                if (score > highestScore) {
+                    highestScore = score;
+                    matchedRoute = route;
+                }
+            });
+
+            // Default fallback if no specific trigger matches
+            if (!matchedRoute || highestScore === 0) {
+                matchedRoute = customRoutes[2]; // Default to general summary/llama
+                highestScore = 75;
+            }
+
+            const modelInfo = modelsDB[matchedRoute.modelKey];
+
+            // Render Results in UI
+            document.getElementById('categoryTitle').textContent = matchedRoute.title;
+            document.getElementById('categoryIconContainer').innerHTML = `<i data-lucide="${matchedRoute.icon}" class="w-6 h-6"></i>`;
+            lucide.createIcons();
+
+            document.getElementById('recommendedModelName').textContent = modelInfo.name;
+            document.getElementById('modelTypeBadge').textContent = modelInfo.type;
+            document.getElementById('recommendedModelReason').textContent = modelInfo.description;
+
+            const savingsPct = Math.round(((modelInfo.baselineCostPer1M - modelInfo.costPer1M) / modelInfo.baselineCostPer1M) * 100);
+            document.getElementById('savingsPercentageHeader').textContent = `~${savingsPct}%`;
+            document.getElementById('recommendedCostText').textContent = `$${modelInfo.costPer1M.toFixed(2)}`;
+            document.getElementById('baselineCostText').textContent = `$${modelInfo.baselineCostPer1M.toFixed(2)}`;
+            document.getElementById('qualityRatingText').textContent = `${modelInfo.qualityRating} / 100`;
+
+            const confidence = Math.min(99, Math.max(82, highestScore + 15));
+            document.getElementById('matchConfidenceBadge').innerHTML = `<i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> ${confidence}% Match`;
+            document.getElementById('alignmentScoreText').textContent = `${confidence} / 100`;
+            document.getElementById('alignmentScoreBar').style.width = `${confidence}%`;
+        }
+
+        // Render Routes List in Route Manager
+        function renderRoutesList() {
+            const container = document.getElementById('routesContainer');
+            container.innerHTML = '';
+
+            customRoutes.forEach(route => {
+                const model = modelsDB[route.modelKey];
+                const card = document.createElement('div');
+                card.className = 'bg-white dark:bg-slate-800 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm space-y-3 relative flex flex-col justify-between';
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="p-2.5 bg-blue-50 dark:bg-blue-900/40 text-blue-600 rounded-xl">
+                                <i data-lucide="${route.icon}" class="w-5 h-5"></i>
+                            </div>
+                            <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 rounded-full">
+                                Active Route
+                            </span>
+                        </div>
+
+                        <div>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-base">${route.title}</h3>
+                            <p class="text-xs text-blue-600 dark:text-blue-400 font-semibold mt-0.5">Assigned Model: ${model.name}</p>
+                        </div>
+
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold">Semantic Keywords / Hints:</span>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                ${route.triggers.map(t => `<span class="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded text-[11px]">${t}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center text-xs">
+                        <span class="text-slate-400">Cost: $${model.costPer1M}/1M</span>
+                        <button onclick="deleteRoute('${route.id}')" class="text-red-500 hover:text-red-700 font-medium flex items-center gap-1">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Remove
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        // Custom Route Modal Operations
+        function openNewRouteModal() {
+            document.getElementById('newRouteModal').classList.remove('hidden');
+        }
+
+        function closeNewRouteModal() {
+            document.getElementById('newRouteModal').classList.add('hidden');
+        }
+
+        function saveCustomRoute(e) {
+            e.preventDefault();
+            const title = document.getElementById('routeTitleInput').value.trim();
+            const modelKey = document.getElementById('routeModelSelect').value;
+            const triggersRaw = document.getElementById('routeTriggersInput').value.trim();
+
+            if (!title || !triggersRaw) return;
+
+            const triggers = triggersRaw.split(',').map(t => t.trim()).filter(Boolean);
+
+            const newRoute = {
+                id: 'route-' + Date.now(),
+                title: title,
+                category: 'custom',
+                icon: 'git-commit',
+                modelKey: modelKey,
+                triggers: triggers
+            };
+
+            customRoutes.unshift(newRoute);
+            renderRoutesList();
+            closeNewRouteModal();
+            document.getElementById('newRouteForm').reset();
+            analyzePrompt();
+        }
+
+        function deleteRoute(id) {
+            customRoutes = customRoutes.filter(r => r.id !== id);
+            renderRoutesList();
+            analyzePrompt();
+        }
+
+        // Live Execution Simulator
+        function setSimMode(mode) {
+            currentSimMode = mode;
+            const autoBtn = document.getElementById('simModeAuto');
+            const flagshipBtn = document.getElementById('simModeFlagship');
+
+            if (mode === 'auto') {
+                autoBtn.className = 'px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-blue-600 shadow-sm transition';
+                flagshipBtn.className = 'px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition';
+            } else {
+                flagshipBtn.className = 'px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-amber-600 shadow-sm transition';
+                autoBtn.className = 'px-3 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition';
+            }
+        }
+
+        function runLiveSimulationFromSandbox() {
+            const promptVal = document.getElementById('promptInput').value;
+            document.getElementById('simPromptInput').value = promptVal;
+            switchTab('simulator');
+            runSimulation();
+        }
+
+        function runSimulation() {
+            const prompt = document.getElementById('simPromptInput').value.toLowerCase();
+            const routedContent = document.getElementById('simRoutedContent');
+            const flagshipContent = document.getElementById('simFlagshipContent');
+
+            routedContent.textContent = 'Routing prompt & streaming tokens from optimal model...';
+            flagshipContent.textContent = 'Dispatching query to flagship baseline API...';
+
+            let sampleSet = simulatedOutputs.summary;
+            if (prompt.includes('arabic') || prompt.includes('منشور') || /[\u0600-\u06FF]/.test(prompt)) {
+                sampleSet = simulatedOutputs.arabic;
+            } else if (prompt.includes('python') || prompt.includes('code') || prompt.includes('json')) {
+                sampleSet = simulatedOutputs.code;
+            }
+
+            document.getElementById('simRoutedModelTitle').textContent = `${sampleSet.routedModel} (Auto-Routed)`;
+
+            setTimeout(() => {
+                routedContent.textContent = sampleSet.routedText;
+                flagshipContent.textContent = sampleSet.flagshipText;
+
+                if (sampleSet === simulatedOutputs.arabic) {
+                    routedContent.classList.add('arabic-text');
+                    flagshipContent.classList.add('arabic-text');
+                } else {
+                    routedContent.classList.remove('arabic-text');
+                    flagshipContent.classList.remove('arabic-text');
+                }
+            }, 500);
+        }
+
+        // Analytics & Chart.js Setup
+        function initChart() {
+            const ctx = document.getElementById('volumeChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Arabic Writing', 'Code & Scripts', 'Summaries & RAG', 'Math & Logic'],
+                    datasets: [
+                        {
+                            label: 'Routed to Open-Source ($0.30/1M avg)',
+                            data: [120000, 85000, 65000, 10000],
+                            backgroundColor: '#10b981'
+                        },
+                        {
+                            label: 'Routed to Flagship Models ($3.00/1M)',
+                            data: [5000, 12000, 8000, 30000],
+                            backgroundColor: '#f59e0b'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, grid: { color: 'rgba(150,150,150,0.1)' } }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // Interactive ROI Calculator Logic
+        function updateCalculator() {
+            const monthlyPrompts = parseInt(document.getElementById('monthlyPrompts').value);
+            const avgTokens = parseInt(document.getElementById('avgTokenLength').value);
+            const openSourcePct = parseInt(document.getElementById('openSourcePct').value) / 100;
+
+            document.getElementById('promptVolumeVal').textContent = monthlyPrompts.toLocaleString();
+            document.getElementById('avgTokenVal').textContent = `${avgTokens} tokens`;
+            document.getElementById('openSourcePctVal').textContent = `${Math.round(openSourcePct * 100)}%`;
+
+            const totalTokens = (monthlyPrompts * avgTokens) / 1000000; // in millions
+            
+            // Flagship cost assumes avg $3.00/1M tokens
+            const flagshipCost = totalTokens * 3.00;
+            
+            // Routed cost assumes openSourcePct at $0.35/1M, remaining at $3.00/1M
+            const routedCost = (totalTokens * openSourcePct * 0.35) + (totalTokens * (1 - openSourcePct) * 3.00);
+            const netSavings = Math.max(0, flagshipCost - routedCost);
+
+            document.getElementById('calcFlagshipCost').textContent = `$${Math.round(flagshipCost).toLocaleString()}/mo`;
+            document.getElementById('calcRoutedCost').textContent = `$${Math.round(routedCost).toLocaleString()}/mo`;
+            document.getElementById('calcNetSavings').textContent = `$${Math.round(netSavings).toLocaleString()} / mo`;
+            document.getElementById('kpiMonthlySavings').textContent = `$${Math.round(netSavings).toLocaleString()}`;
+        }
+    </script>
+</body>
+</html>
